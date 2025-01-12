@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import API_URL from '../config';
 
 const LoginForm = ({ onLogin }) => {
   const [username, setUsername] = useState("");
@@ -9,7 +10,7 @@ const LoginForm = ({ onLogin }) => {
     e.preventDefault();
 
     try {
-      const res = await axios.post("/auth/login", { username, password });
+      const res = await axios.post(`${API_URL}/auth/login`, { username, password });
       onLogin(res.data.token);
     } catch (err) {
       alert("Login failed!");

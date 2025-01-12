@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import API_URL from '../config';
 
 const ApplicantCard = () => {
   const [applicants, setApplicants] = useState([]);
@@ -9,7 +10,7 @@ const ApplicantCard = () => {
   useEffect(() => {
     const fetchApplicants = async () => {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`/applicants?status=${statusFilter}`, {
+      const res = await axios.get(`${API_URL}/applicants?status=${statusFilter}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setApplicants(res.data);
@@ -22,7 +23,7 @@ const ApplicantCard = () => {
   const handleStatusChange = async (newStatus) => {
     const applicant = applicants[currentIndex];
     await axios.put(
-      `/applicants/${applicant._id}/status`,
+      `${API_URL}/applicants/${applicant._id}/status`,
       { status: newStatus },
       { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
     );
