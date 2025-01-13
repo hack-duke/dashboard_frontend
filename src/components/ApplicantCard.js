@@ -6,6 +6,32 @@ const ApplicantCard = () => {
   const [applicants, setApplicants] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [statusFilter, setStatusFilter] = useState("pending");
+  const [counts, setCounts] = useState({
+    total: 0,
+    accepted: 0,
+    rejected: 0,
+    pending: 0
+  });
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`${API_URL}/applicants/counts`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCounts(res.data);
+    };
+
+    fetchCounts();
+  }, []);
+
+  const updateCounts = (oldStatus, newStatus) => {
+    setCounts(prev => ({
+      ...prev,
+      [oldStatus]: prev[oldStatus] - 1,
+      [newStatus]: prev[newStatus] + 1
+    }));
+  };
 
   useEffect(() => {
     const fetchApplicants = async () => {
@@ -22,6 +48,8 @@ const ApplicantCard = () => {
 
   const handleStatusChange = async (newStatus) => {
     const applicant = applicants[currentIndex];
+    const oldStatus = applicant.status;
+    
     await axios.put(
       `${API_URL}/applicants/${applicant._id}/status`,
       { status: newStatus },
@@ -31,6 +59,7 @@ const ApplicantCard = () => {
     const updatedApplicants = [...applicants];
     updatedApplicants[currentIndex].status = newStatus;
     setApplicants(updatedApplicants);
+    updateCounts(oldStatus, newStatus);
   };
 
   const currentApplicant = applicants[currentIndex];
@@ -82,6 +111,34 @@ const ApplicantCard = () => {
 
   return (
     <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ 
+        marginBottom: '20px', 
+        padding: '20px', 
+        backgroundColor: 'white', 
+        borderRadius: '8px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <h2 style={{ marginBottom: '15px' }}>Application Statistics</h2>
+        <div style={{ display: 'flex', gap: '20px' }}>
+          <div style={{ flex: 1, padding: '15px', borderRadius: '6px', backgroundColor: '#f5f5f5', textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{counts.total}</div>
+            <div>Total Applications</div>
+          </div>
+          <div style={{ flex: 1, padding: '15px', borderRadius: '6px', backgroundColor: '#e8f5e9', textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#4CAF50' }}>{counts.accepted}</div>
+            <div>Accepted</div>
+          </div>
+          <div style={{ flex: 1, padding: '15px', borderRadius: '6px', backgroundColor: '#ffebee', textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f44336' }}>{counts.rejected}</div>
+            <div>Rejected</div>
+          </div>
+          <div style={{ flex: 1, padding: '15px', borderRadius: '6px', backgroundColor: '#fff3e0', textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#FFA500' }}>{counts.pending}</div>
+            <div>Pending</div>
+          </div>
+        </div>
+      </div>
+
       <FilterControls />
       {currentApplicant ? (
         <div style={{ display: 'flex', gap: '20px' }}>
@@ -128,16 +185,76 @@ const ApplicantCard = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-              <button onClick={() => handleStatusChange("accepted")} 
-                      style={{ backgroundColor: '#4CAF50', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '4px' }}>
+              <button 
+                onClick={() => handleStatusChange("accepted")} 
+                style={{
+                  backgroundColor: '#4CAF50',
+                  color: 'white',
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                }}
+              >
                 Accept
               </button>
-              <button onClick={() => handleStatusChange("rejected")}
-                      style={{ backgroundColor: '#f44336', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '4px' }}>
+              <button 
+                onClick={() => handleStatusChange("rejected")}
+                style={{
+                  backgroundColor: '#f44336',
+                  color: 'white',
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                }}
+              >
                 Reject
               </button>
-              <button onClick={() => handleStatusChange("pending")}
-                      style={{ backgroundColor: '#FFA500', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '4px' }}>
+              <button 
+                onClick={() => handleStatusChange("pending")}
+                style={{
+                  backgroundColor: '#FFA500',
+                  color: 'white',
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                }}
+              >
                 Pending
               </button>
             </div>
