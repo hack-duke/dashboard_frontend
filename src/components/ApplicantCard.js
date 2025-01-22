@@ -155,7 +155,7 @@ const ApplicantCard = () => {
   }, [searchQuery, applicants]);
 
   const handleStatusChange = async (newStatus) => {
-    const applicant = applicants[currentIndex];
+    const applicant = filteredApplicants[currentIndex];
     const oldStatus = applicant.status;
     
     await axios.put(
@@ -164,9 +164,16 @@ const ApplicantCard = () => {
       { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
     );
 
+    const originalIndex = applicants.findIndex(a => a._id === applicant._id);
+    
     const updatedApplicants = [...applicants];
-    updatedApplicants[currentIndex].status = newStatus;
+    updatedApplicants[originalIndex].status = newStatus;
     setApplicants(updatedApplicants);
+
+    const updatedFilteredApplicants = [...filteredApplicants];
+    updatedFilteredApplicants[currentIndex].status = newStatus;
+    setFilteredApplicants(updatedFilteredApplicants);
+    
     updateCounts(oldStatus, newStatus);
   };
 
