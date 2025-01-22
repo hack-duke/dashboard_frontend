@@ -2,10 +2,105 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import API_URL from '../config';
 
+const SearchBar = React.memo(({ onSearch, resultCount }) => {
+  return (
+    <div style={{ 
+      marginBottom: '20px',
+      padding: '20px',
+      backgroundColor: 'white',
+      borderRadius: '8px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '20px'
+    }}>
+      <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <input
+          type="text"
+          placeholder="Search by name, university, or email..."
+          onChange={(e) => onSearch(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '12px',
+            paddingRight: '40px',
+            borderRadius: '4px',
+            border: '1px solid #ddd',
+            fontSize: '16px',
+            boxSizing: 'border-box'
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            right: '8px',
+            padding: '8px',
+            color: '#666'
+          }}
+        >
+          🔍
+        </div>
+      </div>
+      <div style={{
+        color: '#666',
+        fontSize: '14px',
+        whiteSpace: 'nowrap'
+      }}>
+        {resultCount} matching results
+      </div>
+    </div>
+  );
+});
+
+const FilterControls = React.memo(({ statusFilter, setStatusFilter }) => (
+  <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+    <button 
+      onClick={() => setStatusFilter("pending")}
+      style={{ 
+        padding: '10px 20px', 
+        backgroundColor: statusFilter === "pending" ? '#FFA500' : '#f5f5f5',
+        color: statusFilter === "pending" ? 'white' : 'black',
+        border: '1px solid #ddd',
+        borderRadius: '4px',
+        cursor: 'pointer'
+      }}
+    >
+      Pending Applications
+    </button>
+    <button 
+      onClick={() => setStatusFilter("accepted")}
+      style={{ 
+        padding: '10px 20px', 
+        backgroundColor: statusFilter === "accepted" ? '#4CAF50' : '#f5f5f5',
+        color: statusFilter === "accepted" ? 'white' : 'black',
+        border: '1px solid #ddd',
+        borderRadius: '4px',
+        cursor: 'pointer'
+      }}
+    >
+      Accepted Applications
+    </button>
+    <button 
+      onClick={() => setStatusFilter("rejected")}
+      style={{ 
+        padding: '10px 20px', 
+        backgroundColor: statusFilter === "rejected" ? '#f44336' : '#f5f5f5',
+        color: statusFilter === "rejected" ? 'white' : 'black',
+        border: '1px solid #ddd',
+        borderRadius: '4px',
+        cursor: 'pointer'
+      }}
+    >
+      Rejected Applications
+    </button>
+  </div>
+));
+
 const ApplicantCard = () => {
   const [applicants, setApplicants] = useState([]);
+  const [filteredApplicants, setFilteredApplicants] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [statusFilter, setStatusFilter] = useState("pending");
+  const [searchQuery, setSearchQuery] = useState("");
   const [counts, setCounts] = useState({
     total: 0,
     accepted: 0,
@@ -40,11 +135,24 @@ const ApplicantCard = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setApplicants(res.data);
+      setFilteredApplicants(res.data);
       setCurrentIndex(0);
     };
 
     fetchApplicants();
   }, [statusFilter]);
+
+  useEffect(() => {
+    const filtered = applicants.filter(applicant => 
+      applicant.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      applicant.university?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      applicant.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredApplicants(filtered);
+    if (filtered.length === 0 || currentIndex >= filtered.length) {
+      setCurrentIndex(0);
+    }
+  }, [searchQuery, applicants]);
 
   const handleStatusChange = async (newStatus) => {
     const applicant = applicants[currentIndex];
@@ -62,52 +170,7 @@ const ApplicantCard = () => {
     updateCounts(oldStatus, newStatus);
   };
 
-  const currentApplicant = applicants[currentIndex];
-
-  // Filter controls component
-  const FilterControls = () => (
-    <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-      <button 
-        onClick={() => setStatusFilter("pending")}
-        style={{ 
-          padding: '10px 20px', 
-          backgroundColor: statusFilter === "pending" ? '#FFA500' : '#f5f5f5',
-          color: statusFilter === "pending" ? 'white' : 'black',
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}
-      >
-        Pending Applications
-      </button>
-      <button 
-        onClick={() => setStatusFilter("accepted")}
-        style={{ 
-          padding: '10px 20px', 
-          backgroundColor: statusFilter === "accepted" ? '#4CAF50' : '#f5f5f5',
-          color: statusFilter === "accepted" ? 'white' : 'black',
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}
-      >
-        Accepted Applications
-      </button>
-      <button 
-        onClick={() => setStatusFilter("rejected")}
-        style={{ 
-          padding: '10px 20px', 
-          backgroundColor: statusFilter === "rejected" ? '#f44336' : '#f5f5f5',
-          color: statusFilter === "rejected" ? 'white' : 'black',
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}
-      >
-        Rejected Applications
-      </button>
-    </div>
-  );
+  const currentApplicant = filteredApplicants[currentIndex];
 
   return (
     <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
@@ -139,8 +202,16 @@ const ApplicantCard = () => {
         </div>
       </div>
 
-      <FilterControls />
-      {currentApplicant ? (
+      <FilterControls 
+        statusFilter={statusFilter} 
+        setStatusFilter={setStatusFilter} 
+      />
+      <SearchBar 
+        onSearch={setSearchQuery} 
+        resultCount={filteredApplicants.length}
+      />
+      
+      {filteredApplicants.length > 0 ? (
         <div style={{ display: 'flex', gap: '20px' }}>
           {/* Left column - Applicant Details */}
           <div style={{ flex: '1', backgroundColor: '#f5f5f5', padding: '20px', borderRadius: '8px' }}>
@@ -264,7 +335,7 @@ const ApplicantCard = () => {
                       style={{ padding: '10px 20px', border: '1px solid #ddd', borderRadius: '4px' }}>
                 Previous
               </button>
-              <button onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, applicants.length - 1))}
+              <button onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, filteredApplicants.length - 1))}
                       style={{ padding: '10px 20px', border: '1px solid #ddd', borderRadius: '4px' }}>
                 Next
               </button>
@@ -286,7 +357,7 @@ const ApplicantCard = () => {
           </div>
         </div>
       ) : (
-        <p>No applicants available</p>
+        <p>No matching applicants found</p>
       )}
     </div>
   );
