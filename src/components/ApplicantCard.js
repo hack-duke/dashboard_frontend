@@ -3,6 +3,34 @@ import axios from "axios";
 import API_URL from '../config';
 
 const SearchBar = React.memo(({ onSearch, resultCount }) => {
+  const [useRegex, setUseRegex] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [isValidRegex, setIsValidRegex] = useState(true);
+
+  const handleSearchChange = (value) => {
+    setSearchInput(value);
+    
+    if (useRegex) {
+      try {
+        new RegExp(value, 'i');
+        setIsValidRegex(true);
+        onSearch({ query: value, isRegex: true });
+      } catch (e) {
+        setIsValidRegex(false);
+        onSearch({ query: value, isRegex: false });
+      }
+    } else {
+      onSearch({ query: value, isRegex: false });
+    }
+  };
+
+  const filterNonDuke = () => {
+    setUseRegex(true);
+    const nonDukeRegex = "^(?!.*\\bDuke\\b).*";
+    setSearchInput(nonDukeRegex);
+    onSearch({ query: nonDukeRegex, isRegex: true });
+  };
+
   return (
     <div style={{ 
       marginBottom: '20px',
@@ -14,19 +42,21 @@ const SearchBar = React.memo(({ onSearch, resultCount }) => {
       alignItems: 'center',
       gap: '20px'
     }}>
-      <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+      <div style={{ flex: 1, position: 'relative' }}>
         <input
           type="text"
           placeholder="Search by name, university, or email..."
-          onChange={(e) => onSearch(e.target.value)}
+          value={searchInput}
+          onChange={(e) => handleSearchChange(e.target.value)}
           style={{
             width: '100%',
             padding: '12px',
             paddingRight: '40px',
             borderRadius: '4px',
-            border: '1px solid #ddd',
+            border: `1px solid ${useRegex && !isValidRegex ? '#f44336' : '#ddd'}`,
             fontSize: '16px',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            backgroundColor: useRegex && !isValidRegex ? '#fff5f5' : 'white'
           }}
         />
         <div
@@ -39,6 +69,46 @@ const SearchBar = React.memo(({ onSearch, resultCount }) => {
         >
           🔍
         </div>
+      </div>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '8px',
+        whiteSpace: 'nowrap'
+      }}>
+        <input
+          type="checkbox"
+          id="regex-toggle"
+          checked={useRegex}
+          onChange={(e) => {
+            setUseRegex(e.target.checked);
+            handleSearchChange(searchInput);
+          }}
+        />
+        <label 
+          htmlFor="regex-toggle"
+          style={{ 
+            fontSize: '14px',
+            color: useRegex && !isValidRegex ? '#f44336' : '#666'
+          }}
+        >
+          RegEx Search
+        </label>
+        <button
+          onClick={filterNonDuke}
+          style={{
+            padding: '8px 12px',
+            backgroundColor: '#f5f5f5',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            color: '#666',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          Filter Non-Duke
+        </button>
       </div>
       <div style={{
         color: '#666',
@@ -100,7 +170,7 @@ const ApplicantCard = () => {
   const [filteredApplicants, setFilteredApplicants] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [statusFilter, setStatusFilter] = useState("pending");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState({ query: "", isRegex: false });
   const [counts, setCounts] = useState({
     total: 0,
     accepted: 0,
@@ -143,11 +213,30 @@ const ApplicantCard = () => {
   }, [statusFilter]);
 
   useEffect(() => {
-    const filtered = applicants.filter(applicant => 
-      applicant.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      applicant.university?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      applicant.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filtered = applicants.filter(applicant => {
+      if (!searchQuery.query) return true;
+      
+      const searchFields = [
+        applicant.name,
+        applicant.university,
+        applicant.email
+      ].filter(Boolean); 
+      
+      if (searchQuery.isRegex) {
+        try {
+          const regex = new RegExp(searchQuery.query, 'i');
+          return [applicant.university].some(field => regex.test(field));
+        } catch (e) {
+          return false;
+        }
+      } else {
+        const query = searchQuery.query.toLowerCase();
+        return searchFields.some(field => 
+          field.toLowerCase().includes(query)
+        );
+      }
+    });
+    
     setFilteredApplicants(filtered);
     if (filtered.length === 0 || currentIndex >= filtered.length) {
       setCurrentIndex(0);
