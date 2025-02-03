@@ -162,6 +162,19 @@ const FilterControls = React.memo(({ statusFilter, setStatusFilter }) => (
     >
       Rejected Applications
     </button>
+    <button 
+      onClick={() => setStatusFilter("confirmed")}
+      style={{ 
+        padding: '10px 20px', 
+        backgroundColor: statusFilter === "confirmed" ? '#2196F3' : '#f5f5f5',
+        color: statusFilter === "confirmed" ? 'white' : 'black',
+        border: '1px solid #ddd',
+        borderRadius: '4px',
+        cursor: 'pointer'
+      }}
+    >
+      Confirmed Applications
+    </button>
   </div>
 ));
 
@@ -175,7 +188,8 @@ const ApplicantCard = () => {
     total: 0,
     accepted: 0,
     rejected: 0,
-    pending: 0
+    pending: 0,
+    confirmed: 0
   });
 
   useEffect(() => {
@@ -294,6 +308,10 @@ const ApplicantCard = () => {
           <div style={{ flex: 1, padding: '15px', borderRadius: '6px', backgroundColor: '#fff3e0', textAlign: 'center' }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#FFA500' }}>{counts.pending}</div>
             <div>Pending</div>
+          </div>
+          <div style={{ flex: 1, padding: '15px', borderRadius: '6px', backgroundColor: '#e3f2fd', textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2196F3' }}>{counts.confirmed}</div>
+            <div>Confirmed</div>
           </div>
         </div>
       </div>
@@ -424,6 +442,30 @@ const ApplicantCard = () => {
               >
                 Pending
               </button>
+
+              <button 
+        onClick={() => handleStatusChange("confirmed")}
+        onMouseOver={(e) => {
+          e.target.style.transform = 'scale(1.05)';
+          e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+        }}
+        onMouseOut={(e) => {
+          e.target.style.transform = 'scale(1)';
+          e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        }}
+        style={{
+          padding: '10px 20px',
+          backgroundColor: '#2196F3',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
+        }}
+      >
+        Confirm
+      </button>
+
+
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -455,6 +497,8 @@ const ApplicantCard = () => {
       ) : (
         <p>No matching applicants found</p>
       )}
+
+
     </div>
   );
 };
